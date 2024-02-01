@@ -18,38 +18,96 @@ namespace TVManagmentSystem.Services
             _Db = db;
         }
 
+        private static List<string> GetChannelss(string URL)
+        {
+            List<string> str = new List<string>();
+            string url = URL;
+            string username = "Admin";
+            string password = "sumavisionrd";
+            string credentials = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{username}:{password}"));
+
+            using (HttpClient client = new HttpClient())
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+
+                try
+                {
+                    using (HttpResponseMessage response = client.GetAsync(url).Result)
+                    {
+
+                        if (response.IsSuccessStatusCode)
+                        {
+
+                            Stream jsonData = response.Content.ReadAsStreamAsync().Result;
+
+                            using (StreamReader read = new StreamReader(jsonData))
+                            {
+
+
+                                while (!read.EndOfStream)
+                                {
+                                    var red = read.ReadLine();
+                                    str.Add(red);
+                                }
+
+                            }
+
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Failed to retrieve data. Status code: {response.StatusCode}");
+                        }
+                    }
+
+                    var res = str.SkipWhile(io => !io.Contains("zInNode7")).ToList();
+
+                    var newres = res.TakeWhile(io => !io.Contains("zOutNode1")).ToList();
+
+                    var newfilter = newres.Where(io => io.Contains("SID")).ToList();
+
+                    List<string> lastres = new List<string>();
+
+                    foreach (var item in newfilter)
+                    {
+                        var re = item.Split(new string[] { "(SID" }, StringSplitOptions.None)[0].Split(new string[] { "{name:\"" }, StringSplitOptions.None)[1].Split('(')[0];
+                        lastres.Add(re);
+                    }
+
+                    List<string> uniqueWords = lastres.Select(w => w.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+
+                    return uniqueWords;
+                    //foreach (var item in uniqueWords)
+                    //{
+                    //    Console.WriteLine( item);
+                    //    Console.WriteLine(  );
+                    //}
+                    //Console.WriteLine( "end");
+                }
+                catch (HttpRequestException e)
+                {
+                    Console.WriteLine($"Error: {e.Message}");
+                }
+            }
+            return null;
+        }
+
         public void LoadChanels()
         {
-            var chanells = _Db.Chanelss.ToList();
-            _Db.Chanelss.RemoveRange(chanells);//gavasuftavot dzveli chanaweri 
-            string currentdir = Directory.GetCurrentDirectory()+"//Arxebi.txt";
-            Console.WriteLine( currentdir);
-            StreamReader reader = new StreamReader(currentdir);
-            if (reader == null) return;
-            while (true)
+            List<string> list = new List<string>();
+            list.AddRange(GetChannelss("http://192.168.20.160/mux/mux_config_en.asp"));
+            list.AddRange(GetChannelss("http://192.168.20.170/mux/mux_config_en.asp"));
+            _Db.Chanelss.RemoveRange(_Db.Chanelss.ToList());
+            List<string> uniqueWords = list.Select(w => w.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+            foreach (var item in uniqueWords)
             {
-                string shed = reader.ReadLine();
-                if (shed != null)
+                _Db.Chanelss.Add(new Chanell()
                 {
-                    if (_Db.Chanelss.Any(io => io.Name.Equals(shed)))
-                    {
-                        continue;
-                    }
-                    else
-                    {
-                        _Db.Chanelss.Add(new Models.Chanell()
-                        {
-                            Name = shed,
-                        });
-                        _Db.SaveChanges();
-                    }
-                }
-                else
-                {
-                    break;
-                }
+                    Name = item.ToUpper()
+                }) ;
 
             }
+            _Db.SaveChanges();
+            Console.WriteLine(uniqueWords.Count);
         }
 
         public void GETAREPORT()
@@ -163,7 +221,8 @@ namespace TVManagmentSystem.Services
 
             foreach (var item in _Db.Chanelss.ToList())
             {
-                if (name.ToLower().Contains(item.Name.ToLower()))
+                Console.WriteLine(name);
+                if (name.ToUpper().Contains(item.Name.ToUpper()))
                 {
                     string json = "[ { ";
                     json += name;
@@ -210,5 +269,6 @@ namespace TVManagmentSystem.Services
 
           
         }
+
     }
 }

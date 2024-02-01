@@ -11,5 +11,7 @@ namespace TVManagmentSystem.Services
         List<InfoResponsee> GetInfoByCHanellName(string Name);
         List<InfoResponsee> GetChanellsByTranscoder(EnumTranscoders choice);
         void DeleteHistory();
+
+  
     }
 }

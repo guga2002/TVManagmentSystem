@@ -46,5 +46,6 @@ namespace TVManagmentSystem.Controllers
         {
           ser.DeleteHistory();
         }
+       
     }
 }

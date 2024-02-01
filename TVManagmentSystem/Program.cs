@@ -10,7 +10,7 @@ builder.Services.AddDbContext<GlobalDbContext>(io =>
     io.UseSqlServer(builder.Configuration.GetConnectionString("GlobalString"));
 });
 builder.Services.AddScoped<IUserService,ChanellService>();
-
+builder.Services.AddScoped<IexcellService, ExcelServices>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
